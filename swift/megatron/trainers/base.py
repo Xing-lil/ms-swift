@@ -750,6 +750,7 @@ class BaseMegatronTrainer(ABC):
                     _orig_forward = ol.forward
 
                     class _LmHeadFp64Wgrad(torch.autograd.Function):
+
                         @staticmethod
                         def forward(ctx, inp, weight):
                             ctx.save_for_backward(inp, weight)
@@ -766,9 +767,7 @@ class BaseMegatronTrainer(ABC):
                             in2 = inp.reshape(-1, inp.shape[-1])
                             gd = g2.double()
                             hd = in2.double()
-                            acc = torch.zeros(
-                                g2.shape[1], in2.shape[1],
-                                dtype=torch.float64, device=g2.device)
+                            acc = torch.zeros(g2.shape[1], in2.shape[1], dtype=torch.float64, device=g2.device)
                             for t in range(gd.shape[0]):
                                 acc.add_(gd[t].unsqueeze(1) * hd[t].unsqueeze(0))
                             grad_weight = acc.to(weight.dtype)
@@ -780,9 +779,8 @@ class BaseMegatronTrainer(ABC):
 
                     ol.forward = _types.MethodType(_new_forward, ol)
                     ol._fp64_wgrad_installed = True
-                    logger.info(
-                        f'[ALIGN] fp64 lm_head wgrad installed on '
-                        f'{type(ol).__name__} (weight {list(ol.weight.shape)})')
+                    logger.info(f'[ALIGN] fp64 lm_head wgrad installed on '
+                                f'{type(ol).__name__} (weight {list(ol.weight.shape)})')
                     return True
 
                 for _m in self.unwrapped_models:
